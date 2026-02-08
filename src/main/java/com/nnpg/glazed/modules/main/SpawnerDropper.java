@@ -112,19 +112,14 @@ public class SpawnerDropper extends Module {
     private void onTick(TickEvent.Pre event) {
         if (mc.player == null || mc.interactionManager == null || mc.world == null) return;
 
-        // Autodetect spawner if not found
         if (spawnerPos == null) {
             spawnerPos = findNearbySpawner();
-            if (spawnerPos != null) {
-                info("Spawner detected nearby!");
-            }
+            if (spawnerPos != null) info("Spawner detected nearby!");
         }
 
-        // Handle auto-reopen timer
         reopenTimer++;
-        int reopenIntervalTicks = autoReopenInterval.get() * 60 * 20; // minutes to ticks
+        int reopenIntervalTicks = autoReopenInterval.get() * 60 * 20;
 
-        // If waiting for interval just count and wait ty
         if (waitingForInterval) {
             if (reopenTimer >= reopenIntervalTicks) {
                 info("Interval reached - opening spawner.");
@@ -134,7 +129,6 @@ public class SpawnerDropper extends Module {
             return;
         }
 
-        // Auto-open spawner at interval if no screen is open 
         if (!(mc.currentScreen instanceof HandledScreen)) {
             if (reopenTimer >= reopenIntervalTicks || reopenTimer == 20) {
                 if (spawnerPos != null) {
@@ -147,9 +141,9 @@ public class SpawnerDropper extends Module {
 
         HandledScreen<?> screen = (HandledScreen<?>) mc.currentScreen;
 
-        // Check for arrows if found close and wait for interval sigma
+        // --- NEW: CLOSE IMMEDIATELY IF ANY ARROWS EXIST ---
         if (boneOnly.get() && hasArrowsInInventory(screen)) {
-            info("Arrows detected - closing spawner and waiting for interval.");
+            info("Arrows detected - closing spawner immediately.");
             mc.currentScreen.close();
             waitingForInterval = true;
             reopenTimer = 0;
@@ -167,26 +161,18 @@ public class SpawnerDropper extends Module {
                     reopenTimer = 0;
                     return;
                 } else {
-                    if (currentStep == 2) {
-                        currentStep = 3;
-                    } else if (currentStep == 5) {
-                        currentStep = 0;
-                    }
+                    currentStep = (currentStep == 2) ? 3 : 0;
                     checkDelayCounter = 0;
                 }
             }
             return;
         }
 
-        // Click delay
         tickCounter++;
-        if (tickCounter < delay.get()) {
-            return;
-        }
-
+        if (tickCounter < delay.get()) return;
         tickCounter = 0;
 
-        // Execute clicks
+        // --- DROP ALL SLOTS BLINDLY (original behavior) ---
         switch (currentStep) {
             case 0:
                 mc.interactionManager.clickSlot(screen.getScreenHandler().syncId, 50, 0, SlotActionType.PICKUP, mc.player);
@@ -227,8 +213,6 @@ public class SpawnerDropper extends Module {
         reopenTimer = 0;
         spawnerPos = null;
         waitingForInterval = false;
-        if (mc.currentScreen != null) {
-            mc.setScreen(null);
-        }
+        if (mc.currentScreen != null) mc.setScreen(null);
     }
 }
